@@ -106,8 +106,12 @@ pub fn total_weight(env: &Env) -> u32 {
 ///
 /// Rejects any delegate that is not a registered signer with
 /// [`Error::UnknownSigner`], so a tally never credits an unregistered address.
+/// A delegate listed more than once is credited once (issue #1028): the host
+/// already refuses duplicate delegated signers, but the tally must not depend
+/// on that to keep a repeated light signer below the threshold.
 pub fn tally_weight(env: &Env, delegates: &Vec<Address>) -> Result<u32, Error> {
     let mut total: u32 = 0;
+    let mut counted: Vec<Address> = Vec::new(env);
     for signer in delegates.iter() {
         if !env
             .storage()
@@ -116,7 +120,11 @@ pub fn tally_weight(env: &Env, delegates: &Vec<Address>) -> Result<u32, Error> {
         {
             return Err(Error::UnknownSigner);
         }
+        if counted.contains(&signer) {
+            continue;
+        }
         total = total.saturating_add(signer_weight(env, &signer));
+        counted.push_back(signer);
     }
     Ok(total)
 }

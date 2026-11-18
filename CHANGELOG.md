@@ -9,6 +9,15 @@ exception: while the project is below `1.0.0`, breaking changes bump the
 
 ## [Unreleased]
 
+- **`multisig-account` (issue #1028): `tally_weight` counts a repeated
+  delegate once.** `weights::tally_weight` summed a signer's weight once per
+  occurrence, so `[A, A, B]` with weights `10`/`20` tallied `40` instead of
+  `30`, contradicting its "distinct approving signers" contract. It now skips
+  a delegate it has already credited. Not exploitable through `__check_auth`
+  today (the host rejects duplicate delegated signers), so this is a
+  defense-in-depth fix; unknown delegates are still rejected with
+  `UnknownSigner`. Pinned by `contracts/multisig-account/tests/tally_weight.rs`.
+
 - **`soroban-sdk` 27.0.6 → 29.0.1.** SDK 29 removes
   `contracttype(export = false)` (the spec is now limited to types reachable
   from the contract boundary), so the attribute is dropped from the storage-key
