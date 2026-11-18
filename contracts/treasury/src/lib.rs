@@ -125,7 +125,8 @@ pub enum Error {
     /// The beneficiary already has a schedule.
     ScheduleAlreadyExists = 5,
     /// The schedule parameters were invalid (zero/negative total, zero
-    /// duration, or a cliff longer than the release window).
+    /// duration, a cliff longer than the release window, or the treasury
+    /// itself named as the beneficiary).
     InvalidSchedule = 6,
     /// Nothing has unlocked since the last claim (or ever).
     NothingToClaim = 7,
@@ -260,7 +261,9 @@ impl Treasury {
     ///
     /// - [`Error::NotInitialized`] before initialization;
     /// - [`Error::InvalidSchedule`] for a non-positive total, a zero duration,
-    ///   or a cliff longer than the window;
+    ///   a cliff longer than the window, or a `beneficiary` that is the
+    ///   treasury itself (a claim would transfer to its own address and strand
+    ///   the allocation);
     /// - [`Error::ScheduleAlreadyExists`] if the beneficiary already has one.
     pub fn add_schedule(
         env: Env,
@@ -272,6 +275,10 @@ impl Treasury {
     ) -> Result<(), Error> {
         require_initialized(&env)?;
         require_admin(&env);
+
+        if beneficiary == env.current_contract_address() {
+            return Err(Error::InvalidSchedule);
+        }
 
         let schedule = VestingSchedule {
             beneficiary: beneficiary.clone(),

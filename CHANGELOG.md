@@ -9,6 +9,15 @@ exception: while the project is below `1.0.0`, breaking changes bump the
 
 ## [Unreleased]
 
+- **`treasury` (issue #1019): `add_schedule` rejects the treasury as its own
+  beneficiary.** A schedule naming `env.current_contract_address()` as the
+  beneficiary is now refused with `Error::InvalidSchedule` before any storage
+  write or event (this also covers `add_team_schedule`, which delegates to it).
+  Previously such a schedule was accepted, and `claim_vested` would transfer
+  the treasury's tokens to itself while booking them as claimed, stranding the
+  allocation with no revoke path. Covered by
+  `contracts/treasury/tests/schedule_self_beneficiary_test.rs`.
+
 - **`soroban-sdk` 27.0.6 → 29.0.1.** SDK 29 removes
   `contracttype(export = false)` (the spec is now limited to types reachable
   from the contract boundary), so the attribute is dropped from the storage-key
